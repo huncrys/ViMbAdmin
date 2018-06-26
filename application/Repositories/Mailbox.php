@@ -47,7 +47,7 @@ class Mailbox extends EntityRepository
     public function loadForMailboxList( $admin, $domain = null )
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select( 'm.id as id, m.username as username, m.name as name, m.active as active, m.maildir_size as maildir_size,
+            ->select( 'm.id as id, m.username as username, m.name as name, m.active as active, m.maildir_size as maildir_size, m.external_id as external_id,
                     m.homedir_size as homedir_size, m.size_at as size_at, m.quota as quota, d.domain as domain, m.delete_pending' )
             ->from( '\\Entities\\Mailbox', 'm' )
             ->where( 'm.delete_pending = FALSE' )
@@ -87,7 +87,7 @@ class Mailbox extends EntityRepository
             $filter = '%' . substr( $filter, 1 );
         
         $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select( 'm.id as id, m.username as username, m.name as name, m.active as active, m.maildir_size as maildir_size,
+            ->select( 'm.id as id, m.username as username, m.name as name, m.active as active, m.maildir_size as maildir_size, m.external_id as external_id,
                     m.homedir_size as homedir_size, m.size_at as size_at, m.quota as quota, d.domain as domain, m.delete_pending' )
             ->from( '\\Entities\\Mailbox', 'm' )
             ->join( 'm.Domain', 'd' )

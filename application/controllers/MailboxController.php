@@ -59,8 +59,7 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
      */
     public function preDispatch()
     {
-        if( $this->getRequest()->getActionName() != 'cli-get-sizes'
-                && $this->getRequest()->getActionName() != 'cli-delete-pending'
+        if( !in_array($this->getRequest()->getActionName(), ['cli-get-sizes', 'cli-delete-pending', 'cli-add'])
                 && !$this->getMailbox() && !$this->getDomain() )
             $this->authorise();
 
@@ -693,6 +692,165 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
             $this->getD2EM()->flush();
             if( $this->getParam( 'verbose' ) ) echo "DONE\n";
         }
+    }
+
+
+    /**
+     * Load a Mailbox object from a user supplied parameter.
+     *
+     * @param int $id The mailbox to load
+     * @return \Entities\Mailbox Either false or the mailbox object
+     */
+    public function loadExternalMailbox($id = null)
+    {
+        $mailbox = $this->getD2EM()->getRepository( '\\Entities\\Mailbox' )->findOneBy(['external_id' => $id]);
+
+        if (!$mailbox) {
+            return false;
+        }
+
+        $this->_domain = $mailbox->getDomain();
+
+        return $mailbox;
+    }
+
+    /**
+     * Add an external mailbox.
+     */
+    public function cliAddAction()
+    {
+        try {
+            $input = json_decode($this->getParam('input'));
+
+            if (empty($input)) {
+                throw new \Exception;
+            }
+        } catch (\Exception $e) {
+            echo 'ERROR: No input specified or found.' . PHP_EOL;
+            return;
+        }
+
+        $this->_user = $this->loadAdmin(1, false, false);
+
+        if (isset($input->domain_id)) {
+            $this->_domain = $this->loadDomain($input->domain_id, false, false);
+        } elseif ($this->getParam('did')) {
+            $this->_domain = $this->loadDomain($this->getParam('did'), false, false);
+        }
+
+        if (isset($input->external_id)) {
+            $this->_mailbox = $this->loadExternalMailbox($input->external_id);
+        } elseif ($this->getParam('mid')) {
+            $this->_mailbox = $this->loadMailbox($this->getParam('mid'), false, false);
+        } elseif ($this->getParam('eid')) {
+            $input->external_id = $this->getParam('eid');
+            $this->_mailbox = $this->loadExternalMailbox($this->getParam('eid'));
+        }
+
+        if (!$this->getMailbox()) {
+            if (!$this->getDomain()) {
+                echo 'ERROR: No domain specified or found.' . PHP_EOL;
+                return;
+            }
+            
+            if (empty($input->username) || empty($input->password) || empty($input->external_id)) {
+                echo 'ERROR: Empty username and/or password and/or external_id' . PHP_EOL;
+                return;
+            }
+
+            // do we have available mailboxes?
+            if ($this->getDomain()->getMaxMailboxes() != 0 && $this->getDomain()->getMailboxCount() >= $this->getDomain()->getMaxMailboxes()) {
+                echo 'ERROR: You have used all of your allocated mailboxes.' . PHP_EOL;
+                return;
+            }
+            
+            $this->_mailbox = new \Entities\Mailbox;
+            $this->getD2EM()->persist($this->getMailbox());
+            $this->getMailbox()->setActive(true);
+
+            $isNew = true;
+        } else {
+            $isNew = false;
+        }
+
+        $username = isset($input->username) ? sprintf("%s@%s", $input->username, $this->_domain->getDomain()) : $this->getMailbox()->getUsername();
+        if ($isNew || empty($this->getMailbox()->getUsername()) || $this->getMailbox()->getUsername() !== $username) {
+            // is the mailbox address valid?
+            if (!Zend_Validate::is($username, 'EmailAddress', ['domain' => false])) {
+                echo 'ERROR: Invalid email address.' . PHP_EOL;
+                return;
+            }
+
+            // does a mailbox of the same name exist?
+            if (!$this->getD2EM()->getRepository(\Entities\Mailbox::class)->isUnique($username)) {
+                echo 'ERROR: Mailbox already exists for ' . $username . PHP_EOL;
+                return;
+            }
+        }
+
+        $this->getMailbox()->setUsername($username);
+        
+        if (!empty($input->username)) {
+            $this->getMailbox()->setLocalPart($input->username);
+        }
+
+        if (isset($input->name)) {
+            $this->getMailbox()->setName($input->name);
+        }
+
+        if (isset($input->quota)) {
+            $this->getMailbox()->setQuota($input->quota);
+        }
+
+        if (isset($input->active)) {
+            $this->getMailbox()->setActive(!!$input->active);
+        }
+
+        if (isset($input->password)) {
+            $this->getMailbox()->setPassword($input->password);
+
+            if (!$isNew) {
+                $this->log(
+                    \Entities\Log::ACTION_MAILBOX_PW_CHANGE,
+                    "{$this->getAdmin()->getFormattedName()} changed password for mailbox {$this->getMailbox()->getUsername()}"
+                );
+            }
+        }
+
+        if (isset($input->external_id)) {
+            $this->getMailbox()->setExternalId($input->external_id);
+        }
+
+        if ($isNew) {
+            $this->getMailbox()->setDomain($this->getDomain());
+            $this->getMailbox()->setHomedir($this->_options['defaults']['mailbox']['homedir']);
+            $this->getMailbox()->setUid($this->_options['defaults']['mailbox']['uid']);
+            $this->getMailbox()->setGid($this->_options['defaults']['mailbox']['gid']);
+            $this->getMailbox()->formatHomedir(str_ireplace('%u', 'user' . $this->getMailbox()->getExternalId(), $this->_options['defaults']['mailbox']['homedir']));
+            $this->getMailbox()->formatMaildir(str_ireplace('%u', 'user' . $this->getMailbox()->getExternalId(), $this->_options['defaults']['mailbox']['maildir']));
+            $this->getMailbox()->setDeletePending(false);
+            $this->getMailbox()->setCreated(new \DateTime);
+
+            $this->getDomain()->setMailboxCount($this->getDomain()->getMailboxCount() + 1);
+        } else {
+            $this->getMailbox()->setModified(new \DateTime());
+        }
+
+        //check quota
+        if ($this->getDomain()->getMaxQuota() != 0) {
+            if ($this->getMailbox()->getQuota() <= 0 || $this->getMailbox()->getQuota() > $this->getDomain()->getMaxQuota()) {
+                $this->getMailbox()->setQuota($this->getDomain()->getQuota());
+            }
+        }
+
+        $this->log(
+            !$isNew ? \Entities\Log::ACTION_MAILBOX_EDIT : \Entities\Log::ACTION_MAILBOX_ADD,
+            "{$this->getAdmin()->getFormattedName()} " . ( !$isNew ? ' edited' : ' added' ) . " mailbox {$this->getMailbox()->getUsername()}"
+        );
+
+        $this->getD2EM()->flush();
+
+        echo 'OK: You have successfully ' . ( !$isNew ? 'edited' : 'added' ) . ' the mailbox record.' . PHP_EOL;
     }
 
     /**

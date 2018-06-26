@@ -59,7 +59,11 @@ try
             'action|a=s'    => 'Action to perform in format of module.controller.action',
             'verbose|v'     => 'Verbose messages will be dumped to the default output.',
             'debug|d'       => 'Enables debug mode.',
-            'copyright|c'   => 'Display copyright information.'
+            'copyright|c'   => 'Display copyright information.',
+            'domain|did=d'  => 'Domain ID to operate on',
+            'mailbox|mid=d' => 'Mailbox ID to operate on',
+            'external|eid=d'=> 'External ID to operate on',
+            'input|i=s'     => 'Input data in JSON',
         )
     );
 
@@ -118,6 +122,26 @@ if( isset( $opts->a ) )
         $front->setRouter(   new OSS_Controller_Router_Cli() );
         $front->setResponse( new Zend_Controller_Response_Cli() );
 
+        if ( $opts->did )
+        {
+            $front->getRequest()->setParam( 'did', $opts->did );
+        }
+
+        if ( $opts->mid )
+        {
+            $front->getRequest()->setParam( 'mid', $opts->mid );
+        }
+
+        if ( $opts->mid )
+        {
+            $front->getRequest()->setParam( 'eid', $opts->mid );
+        }
+
+        if ( $opts->input )
+        {
+            $front->getRequest()->setParam( 'input', $opts->input );
+        }
+        
         $front->setParam( 'noViewRenderer', true )
               ->setParam( 'disableOutputBuffering', true );
               
