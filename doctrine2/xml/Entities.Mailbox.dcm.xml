@@ -36,6 +36,7 @@
         <option name="default">0</option>
       </options>
     </field>
+    <field name="external_id" type="integer" nullable="true"/>
     <field name="created" type="datetime" nullable="false"/>
     <field name="modified" type="datetime" nullable="true"/>
     <many-to-one field="Domain" target-entity="Entities\Domain" inversed-by="Mailboxes">

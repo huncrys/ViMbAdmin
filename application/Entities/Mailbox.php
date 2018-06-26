@@ -107,6 +107,11 @@ class Mailbox
     private $size_at;
 
     /**
+     * @var integer|null
+     */
+    private $external_id;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -741,5 +746,30 @@ class Mailbox
     public function getDeletePending()
     {
         return $this->delete_pending;
+    }
+
+
+    /**
+     * Set external_id
+     *
+     * @param int|null $external_id
+     *
+     * @return Mailbox
+     */
+    public function setExternalId($externalId)
+    {
+        $this->external_id = $externalId;
+
+        return $this;
+    }
+
+    /**
+     * Get external_id
+     *
+     * @return int|null
+     */
+    public function getExternalId()
+    {
+        return $this->external_id;
     }
 }
