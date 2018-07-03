@@ -855,6 +855,8 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
                     "{$this->getAdmin()->getFormattedName()} " . ( !$isNew ? ' edited' : ' added' ) . " mailbox {$this->getMailbox()->getUsername()}"
                 );
             }
+
+            $this->getMailbox()->setModified(new \DateTime);
         }
 
         $this->getD2EM()->flush();
