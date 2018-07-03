@@ -852,7 +852,7 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
             if ($count > 0) {
                 $this->log(
                     !$isNew ? \Entities\Log::ACTION_MAILBOX_EDIT : \Entities\Log::ACTION_MAILBOX_ADD,
-                    "{$this->getAdmin()->getFormattedName()} " . ( !$isNew ? ' edited' : ' added' ) . " mailbox {$this->getMailbox()->getUsername()}"
+                    "{$this->getAdmin()->getFormattedName()} " . ( !$isNew ? 'edited' : 'added' ) . " mailbox {$this->getMailbox()->getUsername()}"
                 );
             }
 
