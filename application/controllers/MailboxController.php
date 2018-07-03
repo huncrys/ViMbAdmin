@@ -808,13 +808,6 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
 
         if (isset($input->password)) {
             $this->getMailbox()->setPassword($input->password);
-
-            if (!$isNew) {
-                $this->log(
-                    \Entities\Log::ACTION_MAILBOX_PW_CHANGE,
-                    "{$this->getAdmin()->getFormattedName()} changed password for mailbox {$this->getMailbox()->getUsername()}"
-                );
-            }
         }
 
         if (isset($input->external_id)) {
@@ -832,8 +825,6 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
             $this->getMailbox()->setCreated(new \DateTime);
 
             $this->getDomain()->setMailboxCount($this->getDomain()->getMailboxCount() + 1);
-        } else {
-            $this->getMailbox()->setModified(new \DateTime());
         }
 
         //check quota
@@ -843,10 +834,28 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
             }
         }
 
-        $this->log(
-            !$isNew ? \Entities\Log::ACTION_MAILBOX_EDIT : \Entities\Log::ACTION_MAILBOX_ADD,
-            "{$this->getAdmin()->getFormattedName()} " . ( !$isNew ? ' edited' : ' added' ) . " mailbox {$this->getMailbox()->getUsername()}"
-        );
+        $uow = $this->getD2EM()->getUnitOfWork();
+        $uow->computeChangeSets();
+        $changes = $uow->getEntityChangeset($this->getMailbox());
+        $count = count($changes);
+
+        if ($count > 0) {
+            if (!empty($changes['password'])) {
+                $this->log(
+                    \Entities\Log::ACTION_MAILBOX_PW_CHANGE,
+                    "{$this->getAdmin()->getFormattedName()} changed password for mailbox {$this->getMailbox()->getUsername()}"
+                );
+
+                $count--;
+            }
+
+            if ($count > 0) {
+                $this->log(
+                    !$isNew ? \Entities\Log::ACTION_MAILBOX_EDIT : \Entities\Log::ACTION_MAILBOX_ADD,
+                    "{$this->getAdmin()->getFormattedName()} " . ( !$isNew ? ' edited' : ' added' ) . " mailbox {$this->getMailbox()->getUsername()}"
+                );
+            }
+        }
 
         $this->getD2EM()->flush();
 
