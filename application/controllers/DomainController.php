@@ -220,7 +220,7 @@ class DomainController extends ViMbAdmin_Controller_PluginAction
 
                 $this->log(
                     $isEdit ? \Entities\Log::ACTION_DOMAIN_EDIT : \Entities\Log::ACTION_DOMAIN_ADD,
-                    "{$this->getAdmin()->getFormattedName()} " . ( $isEdit ? ' edited' : ' added' ) . " domain {$this->getDomain()->getDomain()}"
+                    "{$this->getAdmin()->getFormattedName()} " . ( $isEdit ? 'edited' : 'added' ) . " domain {$this->getDomain()->getDomain()}"
                 );
             
                 $this->notify( 'domain', 'add', 'addPreflush', $this );

@@ -283,7 +283,7 @@ class AliasController extends ViMbAdmin_Controller_PluginAction
 
                 $this->log(
                     $this->isEdit() ? \Entities\Log::ACTION_ALIAS_EDIT : \Entities\Log::ACTION_ALIAS_ADD,
-                    "{$this->getAdmin()->getFormattedName()} " . ( $this->isEdit() ? ' edited' : ' added' ) . " alias {$this->getAlias()->getAddress()}"
+                    "{$this->getAdmin()->getFormattedName()} " . ( $this->isEdit() ? 'edited' : 'added' ) . " alias {$this->getAlias()->getAddress()}"
                 );
 
                 $this->notify( 'alias', 'add', 'addPreflush', $this );
