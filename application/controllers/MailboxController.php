@@ -352,7 +352,7 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
 
                 $this->log(
                     $this->isEdit() ? \Entities\Log::ACTION_MAILBOX_EDIT : \Entities\Log::ACTION_MAILBOX_ADD,
-                    "{$this->getAdmin()->getFormattedName()} " . ( $this->isEdit() ? ' edited' : ' added' ) . " mailbox {$this->getMailbox()->getUsername()}"
+                    "{$this->getAdmin()->getFormattedName()} " . ( $this->isEdit() ? 'edited' : 'added' ) . " mailbox {$this->getMailbox()->getUsername()}"
                 );
 
                 $this->notify( 'mailbox', 'add', 'addPreflush', $this );
