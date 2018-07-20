@@ -694,7 +694,6 @@ class MailboxController extends ViMbAdmin_Controller_PluginAction
         }
     }
 
-
     /**
      * Load a Mailbox object from a user supplied parameter.
      *
